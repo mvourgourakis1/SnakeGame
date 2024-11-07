@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Customizable Snake Game with Obstacles</title>
+  <style>
+    body {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      background-color: #f0f0f0;
+      margin: 0;
+      font-family: Arial, sans-serif;
+    }
+    #gameCanvas {
+      border: 2px solid #333;
+      background-color: #fff;
+    }
+    #score {
+      font-size: 24px;
+      margin-bottom: 10px;
+    }
+    #start-screen, #game-over-screen {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    #game-screen, #game-over-screen {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+    }
+    .option-group {
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <!-- Start Screen -->
+  <div id="start-screen">
+    <h1>Welcome to Snake Game!</h1>
+    
+    <div class="option-group">
+      <label for="foodCount">Number of food items (1-10):</label>
+      <input type="number" id="foodCount" min="1" max="10" value="3">
+    </div>
+    
+    <div class="option-group">
+      <label for="gameSpeed">Game Speed:</label>
+      <select id="gameSpeed">
+        <option value="200">Slow</option>
+        <option value="100" selected>Regular</option>
+        <option value="50">Fast</option>
+      </select>
+    </div>
+    
+    <div class="option-group">
+      <label for="snakeColor">Snake Color:</label>
+      <select id="snakeColor">
+        <option value="#FF0000">Red</option>
+        <option value="#FFA500">Orange</option>
+        <option value="#FFFF00">Yellow</option>
+        <option value="#008000">Green</option>
+        <option value="#0000FF">Blue</option>
+        <option value="#800080">Purple</option>
+        <option value="#FFC0CB">Pink</option>
+      </select>
+    </div>
+    
+    <div class="option-group">
+      <label for="foodColor">Food Color:</label>
+      <select id="foodColor">
+        <option value="#FF0000">Red</option>
+        <option value="#FFA500">Orange</option>
+        <option value="#FFFF00">Yellow</option>
+        <option value="#008000">Green</option>
+        <option value="#0000FF">Blue</option>
+        <option value="#800080">Purple</option>
+        <option value="#FFC0CB">Pink</option>
+      </select>
+    </div>
+
+    <div class="option-group">
+      <label for="gameMode">Game Mode:</label>
+      <select id="gameMode">
+        <option value="classic">Classic</option>
+        <option value="obstacles">Obstacles</option>
+      </select>
+    </div>
+
+    <button onclick="startGame()">Start Game</button>
+  </div>
+
+  <!-- Game Screen -->
+  <div id="game-screen">
+    <div id="score">Score: 0</div>
+    <canvas id="gameCanvas" width="400" height="400"></canvas>
+  </div>
+
+  <!-- Game Over Screen -->
+  <div id="game-over-screen">
+    <h2>Game Over :(</h2>
+    <p>Your final score was: <span id="final-score">0</span></p>
+    <button onclick="restartGame()">Play Again</button>
+  </div>
+
+  <script>
+    const canvas = document.getElementById("gameCanvas");
+    const ctx = canvas.getContext("2d");
+    const scoreDisplay = document.getElementById("score");
+    const startScreen = document.getElementById("start-screen");
+    const gameScreen = document.getElementById("game-screen");
+    const gameOverScreen = document.getElementById("game-over-screen");
+    const finalScoreDisplay = document.getElementById("final-score");
+
+    const boxSize = 20;
+    const canvasSize = 400;
+    let numFoodItems = 3;
+    let snakeColor = "#0000FF";
+    let foodColor = "#FF0000";
+    let gameSpeed = 100;
+    let gameMode = "classic";
+    let snake;
+    let direction;
+    let foods;
+    let obstacles = [];
+    let score;
+    let gameInterval;
+
+    document.addEventListener("keydown", changeDirection);
+
+    function changeDirection(event) {
+      const key = event.key;
+      if (key === "ArrowUp" && direction.y === 0) direction = { x: 0, y: -boxSize };
+      if (key === "ArrowDown" && direction.y === 0) direction = { x: 0, y: boxSize };
+      if (key === "ArrowLeft" && direction.x === 0) direction = { x: -boxSize, y: 0 };
+      if (key === "ArrowRight" && direction.x === 0) direction = { x: boxSize, y: 0 };
+    }
+
+    function generateFoodItems(count) {
+      const foodArray = [];
+      for (let i = 0; i < count; i++) {
+        foodArray.push({
+          x: Math.floor(Math.random() * (canvasSize / boxSize)) * boxSize,
+          y: Math.floor(Math.random() * (canvasSize / boxSize)) * boxSize
+        });
+      }
+      return foodArray;
+    }
+
+    function generateObstacles() {
+      const obstacleArray = [];
+      for (let i = 0; i < 14; i++) {
+        obstacleArray.push({
+          x: Math.floor(Math.random() * (canvasSize / boxSize)) * boxSize,
+          y: Math.floor(Math.random() * (canvasSize / boxSize)) * boxSize
+        });
+      }
+      return obstacleArray;
+    }
+
+    function startGame() {
+      // Get the settings from the input fields
+      numFoodItems = parseInt(document.getElementById("foodCount").value);
+      gameSpeed = parseInt(document.getElementById("gameSpeed").value);
+      snakeColor = document.getElementById("snakeColor").value;
+      foodColor = document.getElementById("foodColor").value;
+      gameMode = document.getElementById("gameMode").value;
+
+      // Hide the start screen and show the game screen
+      startScreen.style.display = "none";
+      gameScreen.style.display = "flex";
+
+      // Initialize game state
+      snake = [{ x: 200, y: 200 }];
+      direction = { x: 0, y: 0 };
+      score = 0;
+      foods = generateFoodItems(numFoodItems);
+      if (gameMode === "obstacles") obstacles = generateObstacles();
+      scoreDisplay.innerText = `Score: ${score}`;
+
+      gameInterval = setInterval(drawGame, gameSpeed);
+    }
+
+    function drawGame() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // Draw light blue checkerboard background
+  for (let x = 0; x < canvas.width; x += boxSize) {
+    for (let y = 0; y < canvas.height; y += boxSize) {
+      ctx.fillStyle = ((x / boxSize + y / boxSize) % 2 === 0) ? '#ADD8E6' : '#B0E0E6'; // Light blue colors
+      ctx.fillRect(x, y, boxSize, boxSize);
+    }
+  }
+
+      // Draw obstacles if in "obstacles" mode
+      if (gameMode === "obstacles") {
+        ctx.fillStyle = "black";
+        obstacles.forEach(obstacle => {
+          ctx.fillRect(obstacle.x, obstacle.y, boxSize, boxSize);
+        });
+      }
+
+      // Draw food
+      ctx.fillStyle = foodColor;
+      foods.forEach(food => {
+        ctx.fillRect(food.x, food.y, boxSize, boxSize);
+      });
+
+      // Move snake
+      const head = { x: snake[0].x + direction.x, y: snake[0].y + direction.y };
+      snake.unshift(head);
+
+      // Check if snake eats any food
+      let ateFood = false;
+      foods.forEach((food, index) => {
+        if (head.x === food.x && head.y === food.y) {
+          score++;
+          scoreDisplay.innerText = `Score: ${score}`;
+          ateFood = true;
+          foods[index] = {
+            x: Math.floor(Math.random() * (canvasSize / boxSize)) * boxSize,
+            y: Math.floor(Math.random() * (canvasSize / boxSize)) * boxSize
+          };
+        }
+      });
+
+      // If no food was eaten, remove the last piece of the tail
+      if (!ateFood) {
+        snake.pop();
+      }
+
+      // Draw snake
+      ctx.fillStyle = snakeColor;
+      snake.forEach(segment => {
+        ctx.fillRect(segment.x, segment.y, boxSize, boxSize);
+      });
+
+      // Check collision with walls, itself, or obstacles
+      if (
+        head.x < 0 || head.x >= canvasSize || head.y < 0 || head.y >= canvasSize ||
+        snake.slice(1).some(segment => segment.x === head.x && segment.y === head.y) ||
+        (gameMode === "obstacles" && obstacles.some(obstacle => obstacle.x === head.x && obstacle.y === head.y))
+      ) {
+        endGame();
+      }
+    }
+
+    function endGame() {
+      clearInterval(gameInterval);
+      gameScreen.style.display = "none";
+      gameOverScreen.style.display = "flex";
+      finalScoreDisplay.innerText = score;
+    }
+
+    function restartGame() {
+      location.reload();
+    }
+  </script>
+</body>
+</html>
