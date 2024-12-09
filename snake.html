@@ -3,53 +3,98 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Customizable Snake Game with Obstacles</title>
+  <title>Classic Snake Game</title>
   <style>
     body {
+      font-family: 'Courier New', monospace;
+      background-color: #000;
       display: flex;
-      flex-direction: column;
       justify-content: center;
       align-items: center;
       height: 100vh;
-      background-color: #f0f0f0;
       margin: 0;
-      font-family: Arial, sans-serif;
+      color: #0F0;
     }
-    #gameCanvas {
-      border: 2px solid #333;
-      background-color: #fff;
-    }
-    #score {
-      font-size: 24px;
-      margin-bottom: 10px;
-    }
+    
     #start-screen, #game-over-screen {
+      text-align: center;
+      background-color: #000;
+      padding: 20px;
+      border: 2px solid #0F0;
+    }
+    
+    h1, h2 {
+      margin-bottom: 20px;
+      text-transform: uppercase;
+    }
+    
+    .option-group {
+      margin: 10px 0;
       display: flex;
-      flex-direction: column;
+      justify-content: space-between;
       align-items: center;
     }
+    
+    label {
+      margin-right: 10px;
+    }
+    
+    input, select {
+      background-color: #000;
+      color: #0F0;
+      border: 1px solid #0F0;
+      padding: 5px;
+    }
+    
+    button {
+      background-color: #0F0;
+      color: #000;
+      border: none;
+      padding: 10px 20px;
+      cursor: pointer;
+      text-transform: uppercase;
+      font-weight: bold;
+      margin-top: 10px;
+    }
+    
+    button:hover {
+      background-color: #0A0;
+    }
+    
+    #gameCanvas {
+      border: 2px solid #0F0;
+      background-color: #000;
+    }
+    
+    #score {
+      color: #0F0;
+      font-family: 'Courier New', monospace;
+      font-size: 20px;
+      margin-bottom: 10px;
+    }
+    
     #game-screen, #game-over-screen {
       display: none;
       flex-direction: column;
       align-items: center;
     }
-    .option-group {
-      margin: 10px 0;
-    }
   </style>
 </head>
 <body>
+  <!-- Audio Elements -->
+  <audio id="buttonSound" src="https://www.soundjay.com/button/beep-07.wav"></audio>
+  <audio id="eatSound" src="munching.mp3"></audio>
   <!-- Start Screen -->
   <div id="start-screen">
-    <h1>Welcome to Snake Game!</h1>
+    <h1>Snake Game</h1>
     
     <div class="option-group">
-      <label for="foodCount">Number of food items (1-10):</label>
+      <label for="foodCount">Food Items:</label>
       <input type="number" id="foodCount" min="1" max="10" value="3">
     </div>
     
     <div class="option-group">
-      <label for="gameSpeed">Game Speed:</label>
+      <label for="gameSpeed">Speed:</label>
       <select id="gameSpeed">
         <option value="200">Slow</option>
         <option value="100" selected>Regular</option>
@@ -60,33 +105,25 @@
     <div class="option-group">
       <label for="snakeColor">Snake Color:</label>
       <select id="snakeColor">
-        <option value="#FFC0CB">Pink</option>
-        <option value="#FF0000">Red</option>
-        <option value="#FFA500">Orange</option>
-        <option value="#FFFF00">Yellow</option>
-        <option value="#008000">Green</option>
-        <option value="#0000FF">Blue</option>
-        <option value="#800080">Purple</option>
+        <option value="#0F0" selected>Green</option>
+        <option value="#FFF">White</option>
+        <option value="#F00">Red</option>
       </select>
     </div>
     
     <div class="option-group">
       <label for="foodColor">Food Color:</label>
       <select id="foodColor">
-        <option value="#FF0000">Red</option>
-        <option value="#FFA500">Orange</option>
-        <option value="#FFFF00">Yellow</option>
-        <option value="#008000">Green</option>
-        <option value="#0000FF">Blue</option>
-        <option value="#800080">Purple</option>
-        <option value="#FFC0CB">Pink</option>
+        <option value="#F00" selected>Red</option>
+        <option value="#0F0">Green</option>
+        <option value="#FFF">White</option>
       </select>
     </div>
 
     <div class="option-group">
-      <label for="gameMode">Game Mode:</label>
+      <label for="gameMode">Mode:</label>
       <select id="gameMode">
-        <option value="classic">Classic</option>
+        <option value="classic" selected>Classic</option>
         <option value="obstacles">Obstacles</option>
       </select>
     </div>
@@ -102,9 +139,9 @@
 
   <!-- Game Over Screen -->
   <div id="game-over-screen">
-    <h2>Game Over :(</h2>
-    <p>Your final score was: <span id="final-score">0</span></p>
-    <button onclick="restartGame()">Play Again</button>
+    <h2>Game Over</h2>
+    <p>Score: <span id="final-score">0</span></p>
+    <button onclick="restartGame()">Replay</button>
   </div>
 
   <script>
@@ -115,12 +152,14 @@
     const gameScreen = document.getElementById("game-screen");
     const gameOverScreen = document.getElementById("game-over-screen");
     const finalScoreDisplay = document.getElementById("final-score");
+    const buttonSound = document.getElementById("buttonSound");
+    const eatSound = document.getElementById("eatSound");
 
     const boxSize = 20;
     const canvasSize = 400;
     let numFoodItems = 3;
-    let snakeColor = "#0000FF";
-    let foodColor = "#FF0000";
+    let snakeColor = "#0F0";
+    let foodColor = "#F00";
     let gameSpeed = 100;
     let gameMode = "classic";
     let snake;
@@ -132,12 +171,51 @@
 
     document.addEventListener("keydown", changeDirection);
 
+    function playButtonSound() {
+      buttonSound.currentTime = 0;
+      buttonSound.play();
+    }
+
+    const bonusSound = new Audio('nice.mp3');
+    const wahoo = new Audio('wahoo.mp3');
+
+    function playEatSound() {
+      // Create a new audio element each time a food is eaten
+      const soundClone = eatSound.cloneNode();
+      soundClone.play();
+
+      // Track and potentially play bonus sound
+      if (score > 0 && score % 10 === 0) {
+        // Stop all currently playing sounds
+        document.querySelectorAll('audio').forEach(audio => {
+          audio.pause();
+          audio.currentTime = 0;
+        });
+
+        // Play the bonus sound
+        bonusSound.play();
+      }
+      if (score > 0 && score % 25 === 0) {
+        wahoo.play();
+      }
+      
+    }
+
     function changeDirection(event) {
-      const key = event.key;
-      if (key === "ArrowUp" && direction.y === 0) direction = { x: 0, y: -boxSize };
-      if (key === "ArrowDown" && direction.y === 0) direction = { x: 0, y: boxSize };
-      if (key === "ArrowLeft" && direction.x === 0) direction = { x: -boxSize, y: 0 };
-      if (key === "ArrowRight" && direction.x === 0) direction = { x: boxSize, y: 0 };
+      const key = event.key.toLowerCase();
+      playButtonSound();
+      
+      // Arrow keys
+      if (key === "arrowup" && direction.y === 0) direction = { x: 0, y: -boxSize };
+      if (key === "arrowdown" && direction.y === 0) direction = { x: 0, y: boxSize };
+      if (key === "arrowleft" && direction.x === 0) direction = { x: -boxSize, y: 0 };
+      if (key === "arrowright" && direction.x === 0) direction = { x: boxSize, y: 0 };
+      
+      // WASD keys
+      if (key === "w" && direction.y === 0) direction = { x: 0, y: -boxSize };
+      if (key === "s" && direction.y === 0) direction = { x: 0, y: boxSize };
+      if (key === "a" && direction.x === 0) direction = { x: -boxSize, y: 0 };
+      if (key === "d" && direction.x === 0) direction = { x: boxSize, y: 0 };
     }
 
     function generateFoodItems(count) {
@@ -163,18 +241,16 @@
     }
 
     function startGame() {
-      // Get the settings from the input fields
+      playButtonSound();
       numFoodItems = parseInt(document.getElementById("foodCount").value);
       gameSpeed = parseInt(document.getElementById("gameSpeed").value);
       snakeColor = document.getElementById("snakeColor").value;
       foodColor = document.getElementById("foodColor").value;
       gameMode = document.getElementById("gameMode").value;
 
-      // Hide the start screen and show the game screen
       startScreen.style.display = "none";
       gameScreen.style.display = "flex";
 
-      // Initialize game state
       snake = [{ x: 200, y: 200 }];
       direction = { x: 0, y: 0 };
       score = 0;
@@ -188,17 +264,28 @@
     function drawGame() {
       ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-      // Draw light blue checkerboard background
-  for (let x = 0; x < canvas.width; x += boxSize) {
-    for (let y = 0; y < canvas.height; y += boxSize) {
-      ctx.fillStyle = ((x / boxSize + y / boxSize) % 2 === 0) ? '#ADD8E6' : '#B0E0E6'; // Light blue colors
-      ctx.fillRect(x, y, boxSize, boxSize);
-    }
-  }
+      // Classic black background
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+      // Draw grid lines
+      ctx.strokeStyle = "#111";
+      for (let x = 0; x < canvas.width; x += boxSize) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, canvas.height);
+        ctx.stroke();
+      }
+      for (let y = 0; y < canvas.height; y += boxSize) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(canvas.width, y);
+        ctx.stroke();
+      }
 
       // Draw obstacles if in "obstacles" mode
       if (gameMode === "obstacles") {
-        ctx.fillStyle = "black";
+        ctx.fillStyle = "#444";
         obstacles.forEach(obstacle => {
           ctx.fillRect(obstacle.x, obstacle.y, boxSize, boxSize);
         });
@@ -219,6 +306,7 @@
       foods.forEach((food, index) => {
         if (head.x === food.x && head.y === food.y) {
           score++;
+          playEatSound();
           scoreDisplay.innerText = `Score: ${score}`;
           ateFood = true;
           foods[index] = {
@@ -245,20 +333,37 @@
         snake.slice(1).some(segment => segment.x === head.x && segment.y === head.y) ||
         (gameMode === "obstacles" && obstacles.some(obstacle => obstacle.x === head.x && obstacle.y === head.y))
       ) {
+        playButtonSound();
         endGame();
       }
     }
 
+    const gameOverSound = new Audio('gameover.wav');
+
     function endGame() {
+      // Play game over sound
+      gameOverSound.play();
+
+      // Stop the game interval
       clearInterval(gameInterval);
+      
+      // Hide game screen and show game over screen
       gameScreen.style.display = "none";
       gameOverScreen.style.display = "flex";
+      
+      // Display final score
       finalScoreDisplay.innerText = score;
     }
 
     function restartGame() {
+      playButtonSound();
       location.reload();
     }
+
+    // Add sound to buttons
+    document.querySelectorAll('button').forEach(button => {
+      button.addEventListener('click', playButtonSound);
+    });
   </script>
 </body>
 </html>
