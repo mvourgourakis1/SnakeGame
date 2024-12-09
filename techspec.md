@@ -1,101 +1,155 @@
-# Snake Game Tech Specs
-
-**Manos Vourgourakis**
-
-## 1. Architecture
-Single-page application (SPA) with three primary screens:
-- **Start Screen**: Game settings and start button
-- **Game Screen**: Canvas for gameplay
-- **Game Over Screen**: Final score and restart button
+# Technical Specification for Snake Game Code
 
 ---
 
-## 2. Technologies
-- **HTML**: Page structure
-- **CSS**: UI styling (buttons, text, canvas)
-- **JavaScript (ES6)**: Game logic, input handling, state management
+## Overview
+
+This project is a simple implementation of the classic *Snake Game* using the Godot Engine. The game logic involves controlling a snake on a grid, eating food items to grow the snake, and avoiding collisions with the grid boundaries or the snake itself. The game supports score tracking and restarts upon game over.
 
 ---
 
-## 3. UI Components
+## Features
 
-### Start Screen
-- **Inputs**: Food count, game speed, snake and food colors, game mode
-- **Button**: Start game
+1. **Core Gameplay:**
+   - Move the snake in four directions (up, down, left, right) using keyboard input.
+   - Collect food items to grow the snake and increase the score.
+   - End the game if the snake collides with itself or the grid boundaries.
 
-### Game Screen
-- **Score display**
-- **Canvas**: Displays snake, food, obstacles
+2. **Game Components:**
+   - **Snake**: Made up of individual segments managed in a grid system.
+   - **Food**: Appears randomly on the grid and relocates after being eaten.
+   - **Score**: Updates and displays in real time.
 
-### Game Over Screen
-- **Final score display**
-- **Button**: Restart game
+3. **Game States:**
+   - **Main Menu**: Initial screen for starting the game.
+   - **In-Game**: Gameplay state with score tracking.
+   - **Game Over**: Displays after the game ends, offering options to restart.
 
----
-
-## 4. Game Logic
-
-### Main Concepts
-- **Snake**: Array of segments, moves by adding a head and removing tail segment unless eating food.
-- **Food**: Array of items, each with coordinates. Snake grows and score increments on collision.
-- **Obstacles**: Randomly placed if selected mode. Colliding with one ends game.
-- **Game Speed**: Adjustable by `gameSpeed` variable controlling loop interval.
-
-### Game Phases
-1. **Initialization**: Resets state on "Start Game"
-2. **Game Loop**: Redraws game elements, checks collisions
-3. **Game Over**: Ends game on collision, clears interval, shows score
-4. **Restarting**: Reloads page on "Play Again"
+4. **Customization:**
+   - Grid size (`cells`) and cell dimensions (`cell_size`) can be modified.
+   - Snake movement speed is controlled by a timer node (`MoveTimer`).
 
 ---
 
-## 5. Game Features
+## Code Breakdown
 
-### Customizable Settings
-- **Food Count**: 1–10
-- **Game Speed**: Slow, regular, fast
-- **Snake/Food Color**: Red, Orange, Yellow, Green, Blue, Purple, Pink
-- **Game Mode**: Classic or Obstacles mode
+### Variables
 
-### Canvas & Background
-- **Canvas Size**: 400x400px
-- **Background**: Light blue checkerboard pattern (#ADD8E6 and #B0E0E6)
+- **Game Variables:**
+  - `score`: Tracks the player's current score.
+  - `game_started`: Boolean indicating if the game is in progress.
 
----
+- **Grid Variables:**
+  - `cells`: Number of cells along each axis of the grid.
+  - `cell_size`: Size of each cell in pixels.
 
-## 6. JavaScript Functions
+- **Snake Variables:**
+  - `snake_data`: Array storing positions of snake segments.
+  - `snake`: Array of snake segment nodes.
+  - `start_pos`: Initial position of the snake.
+  - `move_direction`: Direction the snake is moving.
 
-### Initialization
-- `startGame()`: Sets initial game state
-- `generateFoodItems(count)`: Places food randomly
-- `generateObstacles()`: Adds 14 obstacles in Obstacles mode
-
-### Game Loop
-- `drawGame()`: Redraws background, obstacles, food, snake; checks collisions
-
-### User Input
-- `changeDirection(event)`: Updates snake direction based on arrow keys
-
-### End Game
-- `endGame()`: Stops game, shows Game Over screen
-
-### Restart Game
-- `restartGame()`: Reloads page
+- **Food Variables:**
+  - `food_pos`: Position of the current food item.
+  - `regen_food`: Boolean controlling food generation.
 
 ---
 
-## 7. Error Handling and Edge Cases
-- **Invalid Input**: Food count limited to 1-10.
-- **Collisions**: Detected with walls, self, obstacles; ends game if triggered.
+### Functions
+
+- **Setup Functions:**
+  - `_ready()`: Entry point; initializes the game.
+  - `new_game()`: Resets the game state and initializes the snake and food.
+  - `generate_snake()`: Spawns the initial snake at a fixed position.
+  - `add_segment(pos)`: Adds a new segment to the snake.
+
+- **Gameplay Functions:**
+  - `move_snake()`: Handles movement and input for the snake.
+  - `_on_move_timer_timeout()`: Advances the snake, handles collisions, and updates game logic.
+  - `check_out_of_bounds()`: Ends the game if the snake leaves the grid.
+  - `check_self_eaten()`: Ends the game if the snake collides with itself.
+  - `check_food_eaten()`: Checks if the snake eats food and updates the score.
+  - `move_food()`: Places a new food item randomly on the grid.
+
+- **Utility Functions:**
+  - `end_game()`: Handles game-over state, pauses the game, and shows the Game Over menu.
+  - `_on_game_over_menu_restart()`: Restarts the game after a game over.
 
 ---
 
-## 8. Performance Considerations
-- **Game Loop**: Managed by `setInterval()`, clears canvas and redraws each frame.
+### Signals
+
+- `MoveTimer.timeout`: Triggers `_on_move_timer_timeout` to update game logic periodically.
 
 ---
 
-## 9. User Interface/UX Considerations
-- **Instructions**: Clear start screen guidance.
-- **Score Display**: Shows current score.
-- **Difficulty**: Adjustable via speed, food count, obstacles.
+### UI Elements
+
+- **Hud**: Displays the current score.
+- **GameOverMenu**: Allows restarting the game after a loss.
+- **MainMenu**: Displays initial options to start the game.
+
+---
+
+## Key Algorithms
+
+1. **Snake Movement:**
+   - Snake head position is updated based on the current `move_direction`.
+   - Remaining segments follow the position of the segment ahead of them (`old_data` array).
+
+2. **Food Placement:**
+   - Food is placed randomly within the grid while avoiding overlap with the snake's body.
+
+3. **Collision Detection:**
+   - **Boundaries**: Snake's head position is checked against grid limits.
+   - **Self-Collision**: Snake's head is compared with the positions of its segments.
+
+---
+
+## Data Flow
+
+1. **Initialization:**
+   - `new_game()` resets all game variables and spawns the snake and food.
+
+2. **Frame Updates:**
+   - `_process()` listens for input and calls `move_snake()` to handle movement.
+
+3. **Timer Updates:**
+   - `_on_move_timer_timeout()` processes snake movement, checks for collisions, and updates the game state.
+
+---
+
+## Configurable Parameters
+
+- `cells`: Adjust grid resolution.
+- `cell_size`: Change the size of each grid cell.
+- `snake_scene`: Allows the use of a custom snake segment scene.
+
+---
+
+## Improvements & Future Enhancements
+
+1. **Multiple Food Items:**
+   - Support multiple food items on the board simultaneously.
+2. **Customizable Settings:**
+   - Allow players to modify game parameters like speed, grid size, and initial snake length via a settings menu.
+3. **Power-Ups:**
+   - Introduce special food items for temporary boosts or penalties.
+4. **High Score System:**
+   - Implement persistent storage for tracking top scores.
+5. **Improved Collision Handling:**
+   - Use area nodes or signals for cleaner collision detection between snake and food.
+
+---
+
+## Dependencies
+
+- **Godot Engine**: Ensure the project is compatible with the current version being used.
+- **Node Structure**:
+  - `Main Node`: Root script (`Node`) managing game state and logic.
+  - `MoveTimer`: Timer node for controlling movement intervals.
+  - `Hud`, `GameOverMenu`, `MainMenu`: UI nodes for user interaction.
+
+---
+
+This specification outlines the current implementation, its features, and areas for improvement. It serves as a guide for maintaining or extending the game.
