@@ -283,7 +283,7 @@
       soundClone.play();
 
       // 1% chance of surprise (1 out of 100)
-      if (Math.random() < 0.05 && surprise) {
+      if (Math.random() < 0.33 && surprise && score > 10) {
         // Pause game movement
         clearInterval(gameInterval);
         
