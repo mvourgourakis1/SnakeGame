@@ -287,15 +287,8 @@
         // Pause game movement
         clearInterval(gameInterval);
         
-        // Wait 2 seconds before showing surprise
-        setTimeout(() => {
-          showSurprise();
-          
-          // Resume game after surprise
-          setTimeout(() => {
-            gameInterval = setInterval(drawGame, gameSpeed);
-          }, 1000);
-        }, 2000);
+        showSurprise();
+        gameInterval = setInterval(drawGame, gameSpeed);
       }
 
       if (score > 0 && score % 10 === 0) {
